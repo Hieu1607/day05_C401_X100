@@ -105,3 +105,12 @@ Nếu sai ngược lại (chọn recall): Agent trả lời nhiều hơn nhưng 
 Kill criteria: Dừng triển khai khi: (1) Hallucination rate > 8% kéo dài hơn 2 tuần mà chưa fix được, (2) Xảy ra bất kỳ 1 incident dữ liệu học sinh bị lộ sai người dùng, (3) CSAT < 3.0/5.0 sau 4 tuần vận hành thật với > 200 ratings.
 
 ---
+
+## 6. Mini AI spec (1 trang)
+
+**Product giải gì, cho ai:** VinSchool AI Agent giải quyết bài toán tra cứu thông tin phân tán cho ~96.000 phụ huynh và ~48.000 học sinh của hệ thống VinSchool — hiện phải tự tra PDF dày 80 trang hoặc gọi hotline giờ hành chính. Agent trả lời tức thì theo ngôn ngữ tự nhiên, cá nhân hoá theo từng học sinh đã xác thực.
+
+**AI làm gì — Augmentation:** Agent không tự thay đổi dữ liệu, không ra quyết định thay người dùng. Nhiệm vụ duy nhất là đọc đúng nguồn (private API hoặc RAG) và trình bày rõ ràng. Mọi câu trả lời về chính sách đều kèm trích dẫn nguồn để user tự verify. Mọi câu trả lời về dữ liệu cá nhân đều kèm timestamp. Khi không chắc hoặc API lỗi → nói thẳng, không bịa.
+
+**Kiến trúc hai lớp:** Layer 1 (Public RAG) index toàn bộ Cẩm nang phụ huynh, biểu phí, chính sách tuyển sinh theo metadata `{campus, grade_level, academic_year}`. Layer 2 (Private Tools) gọi VinschoolOne internal API qua 5 tools: `get_grades`, `get_attendance`, `get_exam_schedule`, `get_finance_status`, `get_assignment_deadlines` — toàn bộ đi qua middleware RBAC kiểm tra `parent_id → student_id` mapping trước khi execute. LLM backbone là Claude claude-sonnet-4-6 với tool calling, system prompt inject user context (role, linked_students, campus) mỗi session.
+
