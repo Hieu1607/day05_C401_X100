@@ -24,5 +24,46 @@ Justify: *User thấy câu trả lời + nguồn trích dẫn, có thể verify 
    Có marginal value không? Model chưa biết dữ liệu cá nhân học sinh (private) → **có marginal value rõ ràng**. Nội quy công khai model có thể biết một phần nhưng không đủ chi tiết theo năm học → RAG vẫn cần thiết.
 
 ---
+## 2. User Stories — 4 paths
+
+### Feature 1: Tra cứu thông tin cá nhân học sinh (Private Layer)
+
+**Trigger:** Phụ huynh đã đăng nhập hỏi "Con tôi học kỳ này điểm Toán bao nhiêu?" → Agent xác định học sinh linked với tài khoản → gọi `get_student_grades()` → trả lời có cấu trúc
+
+| Path | Câu hỏi thiết kế | Mô tả |
+|------|-------------------|-------|
+| Happy — AI đúng, tự tin | User thấy gì? Flow kết thúc ra sao? | Điểm hiện ra theo bảng: môn / điểm thành phần / tổng kết / xếp loại. Có ghi rõ "Cập nhật lần cuối: [timestamp]". Phụ huynh đọc xong, không cần làm thêm gì |
+| Low-confidence — AI không chắc | System báo "không chắc" bằng cách nào? User quyết thế nào? | Phụ huynh có 2 con → agent hỏi "Bạn đang hỏi về Minh Khoa (lớp 9) hay Minh Anh (lớp 5)?". Chỉ 1 lần clarification — nếu vẫn mơ hồ, agent lấy con lớn hơn và thông báo rõ |
+| Failure — AI sai | User biết AI sai bằng cách nào? Recover ra sao? | API VinschoolOne trả về điểm cũ chưa cập nhật → agent hiển thị timestamp rõ ràng, user so sánh với app → bấm "Báo sai" → auto-escalate tới GVCN qua email template |
+| Correction — user sửa | User sửa bằng cách nào? Data đó đi vào đâu? | Bấm "Phản hồi không đúng" → chọn loại lỗi (sai số liệu / thiếu thông tin / không liên quan) → ghi log `{query_hash, error_type, timestamp}` → review queue weekly → nếu là lỗi API sync thì ticket tới team VinschoolOne |
+
+---
+
+### Feature 2: Tra cứu chính sách & nội quy (Public RAG Layer)
+
+**Trigger:** Bất kỳ user nào (kể cả chưa đăng nhập) hỏi về quy định, biểu phí, lịch tuyển sinh → Agent tìm trong vector DB (Cẩm nang PDF đã được index) → trả lời kèm trích dẫn nguồn
+
+| Path | Câu hỏi thiết kế | Mô tả |
+|------|-------------------|-------|
+| Happy — AI đúng, tự tin | User thấy gì? Flow kết thúc ra sao? | "Học phí THCS Advanced tại Hà Nội năm 2024–2025 là 280 triệu/năm (Nguồn: Biểu phí VinSchool 2024-2025, mục 3.2)." User đọc, có link nguồn để verify, không cần hỏi thêm |
+| Low-confidence — AI không chắc | System báo "không chắc" bằng cách nào? User quyết thế nào? | Câu hỏi không rõ cơ sở/cấp học → agent hỏi 1 lần: "Bạn đang hỏi cho cơ sở nào và cấp học nào?" Nếu user không biết → agent trả lời theo trường hợp phổ biến nhất và ghi chú "Có thể khác theo cơ sở, vui lòng xác nhận với nhà trường" |
+| Failure — AI sai | User biết AI sai bằng cách nào? Recover ra sao? | Agent dùng Cẩm nang 2023–2024 (index chưa cập nhật) → trả lời biểu phí cũ → user phát hiện khi đối chiếu với thông báo nhà trường → báo sai → team cập nhật PDF mới vào index |
+| Correction — user sửa | User sửa bằng cách nào? Data đó đi vào đâu? | Nút "Tài liệu này đã lỗi thời" → log kèm `{source_chunk_id, academic_year}` → trigger re-index pipeline nếu có PDF mới, hoặc thêm vào watchlist để admin kiểm tra |
+
+---
+
+### Feature 3: Cá nhân hoá câu trả lời chính sách theo profile học sinh
+
+**Trigger:** Phụ huynh đã đăng nhập hỏi câu hỏi chính sách chung ("Học phí bao nhiêu?") → Agent tự động kết hợp profile học sinh (cấp, chương trình, cơ sở) với RAG → trả lời cụ thể không cần hỏi lại
+
+| Path | Câu hỏi thiết kế | Mô tả |
+|------|-------------------|-------|
+| Happy — AI đúng, tự tin | User thấy gì? Flow kết thúc ra sao? | "Dựa trên hồ sơ của Minh Khoa (THCS Advanced, Royal City), học phí kỳ 2 là 140 triệu. Bao gồm: học phí chính 130tr + bán trú 10tr." Phụ huynh không cần nhập thêm thông tin |
+| Low-confidence — AI không chắc | System báo "không chắc" bằng cách nào? User quyết thế nào? | Profile học sinh có trường thiếu (ví dụ chương trình chưa xác định) → agent trả lời cả 2 trường hợp Standard và Advanced với note "Vui lòng xác nhận chương trình con đang học" |
+| Failure — AI sai | User biết AI sai bằng cách nào? Recover ra sao? | Agent dùng sai cơ sở (lấy phí Hà Nội cho học sinh TP.HCM) → user thấy số sai, báo sai → log lỗi mapping `campus_id` → fix trong metadata chunking |
+| Correction — user sửa | User sửa bằng cách nào? Data đó đi vào đâu? | "Thông tin này không đúng với tôi" → chọn cụ thể điều gì sai → log chi tiết → nếu lỗi do metadata → fix chunk và re-embed |
+
+---
+
 
 
