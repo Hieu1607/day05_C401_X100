@@ -82,3 +82,14 @@ Nếu sai ngược lại (chọn recall): Agent trả lời nhiều hơn nhưng 
 
 ---
 
+## 4. Top 3 failure modes
+
+*"Failure mode nào user KHÔNG BIẾT bị sai? Đó là cái nguy hiểm nhất."*
+
+| # | Trigger | Hậu quả | Mitigation |
+|---|---------|---------|------------|
+| 1 | Agent trả lời điểm số hoặc học phí từ cache/index cũ trong khi giáo viên đã cập nhật dữ liệu mới trong VinschoolOne — user không biết đang xem dữ liệu stale | Phụ huynh tin điểm đúng, không theo dõi kết quả học thật. Phụ huynh tin học phí đã đóng đủ nhưng thực ra còn thiếu → bị phạt trễ hạn. **User không biết mình bị sai** vì không có dấu hiệu cảnh báo | Timestamp bắt buộc trên mọi câu trả lời dữ liệu private. TTL cache ≤ 30 phút. Nếu API call fail → KHÔNG dùng cache, báo rõ "Không thể truy xuất dữ liệu mới nhất lúc này" |
+| 2 | Phụ huynh hỏi về chính sách mà agent lấy từ Cẩm nang năm học cũ (PDF chưa được re-index sau khi nhà trường cập nhật) — agent trả lời tự tin, có trích dẫn nguồn nhưng nguồn đó đã lỗi thời | Phụ huynh chuẩn bị hồ sơ sai, đóng học phí theo biểu cũ, hoặc cho con vi phạm nội quy theo quy định đã thay đổi. Trích dẫn nguồn tạo cảm giác tin tưởng giả → **nguy hiểm hơn là không trích dẫn** | Mỗi chunk metadata phải có `academic_year` và `indexed_date`. Query luôn filter theo năm học hiện tại. Nếu tài liệu năm mới chưa có → agent thông báo rõ "Thông tin dưới đây từ năm học 2024–2025, chưa có cập nhật mới hơn" |
+| 3 | Agent hiển thị đúng dữ liệu nhưng sai học sinh — xảy ra khi phụ huynh có nhiều con, session context bị nhầm, hoặc lỗi mapping `parent_id → student_id` | Phụ huynh theo dõi nhầm tiến độ học tập của con — có thể không phát hiện nếu điểm hai con tương đương. Trong trường hợp tệ hơn: staff tra cứu nhầm hồ sơ học sinh và tư vấn sai cho phụ huynh khác | Server-side enforce mapping `parent_id → [student_ids]` — không tin vào bất kỳ `student_id` nào client truyền lên mà không qua verify. Luôn hiển thị tên đầy đủ + lớp + cơ sở của học sinh trong mọi response để phụ huynh cross-check |
+
+---
