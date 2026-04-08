@@ -65,5 +65,20 @@ Justify: *User thấy câu trả lời + nguồn trích dẫn, có thể verify 
 
 ---
 
+## 3. Eval metrics + threshold
+**Optimize precision hay recall?** ☑ Precision
+Tại sao? Với dữ liệu cá nhân (điểm, học phí), sai 1 con số gây mất tin tưởng nghiêm trọng hơn là không trả lời được. Phụ huynh chấp nhận "Tôi không tìm thấy thông tin này" hơn là nhận số liệu sai.
+Nếu sai ngược lại (chọn recall): Agent trả lời nhiều hơn nhưng sai thường xuyên hơn → phụ huynh nhận học phí sai, điểm sai → mất tin tưởng hoàn toàn, abandon product.
 
+| Metric | Threshold | Red flag (dừng khi) |
+|--------|-----------|---------------------|
+| Answer Correctness (human eval, dữ liệu private) | ≥ 90% | < 80% trong 1 sprint |
+| Hallucination Rate (câu trả lời bịa đặt không có trong nguồn) | ≤ 3% | > 8% trong bất kỳ ngày nào |
+| RAG Faithfulness (RAGAS score, câu trả lời bám nguồn) | ≥ 0.80 | < 0.65 |
+| Citation Rate (% câu trả lời chính sách có dẫn nguồn) | ≥ 95% | < 85% |
+| Task Completion Rate (% session user resolve được ý định) | ≥ 75% | < 60% |
+| Auth Bypass Detection (% prompt injection bị chặn) | 100% | Bất kỳ 1 incident bypass thành công |
+| P95 Latency | < 5 giây | > 10 giây liên tục 1 giờ |
+
+---
 
