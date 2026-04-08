@@ -25,18 +25,4 @@ Justify: *User thấy câu trả lời + nguồn trích dẫn, có thể verify 
 
 ---
 
-## 2. User Stories — 4 paths
-
-### Feature 1: Tra cứu thông tin cá nhân học sinh (Private Layer)
-
-**Trigger:** Phụ huynh đã đăng nhập hỏi "Con tôi học kỳ này điểm Toán bao nhiêu?" → Agent xác định học sinh linked với tài khoản → gọi `get_student_grades()` → trả lời có cấu trúc
-
-| Path | Câu hỏi thiết kế | Mô tả |
-|------|-------------------|-------|
-| Happy — AI đúng, tự tin | User thấy gì? Flow kết thúc ra sao? | Điểm hiện ra theo bảng: môn / điểm thành phần / tổng kết / xếp loại. Có ghi rõ "Cập nhật lần cuối: [timestamp]". Phụ huynh đọc xong, không cần làm thêm gì |
-| Low-confidence — AI không chắc | System báo "không chắc" bằng cách nào? User quyết thế nào? | Phụ huynh có 2 con → agent hỏi "Bạn đang hỏi về Minh Khoa (lớp 9) hay Minh Anh (lớp 5)?". Chỉ 1 lần clarification — nếu vẫn mơ hồ, agent lấy con lớn hơn và thông báo rõ |
-| Failure — AI sai | User biết AI sai bằng cách nào? Recover ra sao? | API VinschoolOne trả về điểm cũ chưa cập nhật → agent hiển thị timestamp rõ ràng, user so sánh với app → bấm "Báo sai" → auto-escalate tới GVCN qua email template |
-| Correction — user sửa | User sửa bằng cách nào? Data đó đi vào đâu? | Bấm "Phản hồi không đúng" → chọn loại lỗi (sai số liệu / thiếu thông tin / không liên quan) → ghi log `{query_hash, error_type, timestamp}` → review queue weekly → nếu là lỗi API sync thì ticket tới team VinschoolOne |
-
----
 
