@@ -93,3 +93,15 @@ Nếu sai ngược lại (chọn recall): Agent trả lời nhiều hơn nhưng 
 | 3 | Agent hiển thị đúng dữ liệu nhưng sai học sinh — xảy ra khi phụ huynh có nhiều con, session context bị nhầm, hoặc lỗi mapping `parent_id → student_id` | Phụ huynh theo dõi nhầm tiến độ học tập của con — có thể không phát hiện nếu điểm hai con tương đương. Trong trường hợp tệ hơn: staff tra cứu nhầm hồ sơ học sinh và tư vấn sai cho phụ huynh khác | Server-side enforce mapping `parent_id → [student_ids]` — không tin vào bất kỳ `student_id` nào client truyền lên mà không qua verify. Luôn hiển thị tên đầy đủ + lớp + cơ sở của học sinh trong mọi response để phụ huynh cross-check |
 
 ---
+
+## 5. ROI 3 kịch bản
+|   | Conservative | Realistic | Optimistic |
+|---|-------------|-----------|------------|
+| Assumption | 500 query/ngày, 65% resolve không cần hotline, chỉ 5 cơ sở pilot | 3.000 query/ngày, 80% resolve, 15 cơ sở, phụ huynh dùng thường xuyên | 10.000 query/ngày, 90% resolve, 50 cơ sở toàn quốc, tích hợp Zalo OA |
+| Cost | ~$7/ngày inference + $300/tháng infra | ~$45/ngày + $500/tháng infra | ~$150/ngày + $1.000/tháng infra |
+| Benefit | Giảm 100 cuộc gọi hotline/ngày (~3 giờ nhân sự), giảm 30 email GVCN/ngày | Giảm 600 cuộc gọi/ngày (~18 giờ nhân sự), GVCN tiết kiệm 30 phút/ngày/người × 200 GV = 100 giờ | Giảm 2.000 cuộc gọi/ngày, tiết kiệm 2 FTE hotline, cải thiện NPS phụ huynh đo được |
+| Net | ~$210/tháng infra+inference, tiết kiệm ~$600/tháng nhân sự → dương nhẹ | ~$1.850/tháng chi phí, tiết kiệm ~$5.000/tháng nhân sự → ROI ~2.7x | ~$5.500/tháng chi phí, tiết kiệm ~$20.000/tháng nhân sự + giá trị retention → ROI ~4x+ |
+
+Kill criteria: Dừng triển khai khi: (1) Hallucination rate > 8% kéo dài hơn 2 tuần mà chưa fix được, (2) Xảy ra bất kỳ 1 incident dữ liệu học sinh bị lộ sai người dùng, (3) CSAT < 3.0/5.0 sau 4 tuần vận hành thật với > 200 ratings.
+
+---
